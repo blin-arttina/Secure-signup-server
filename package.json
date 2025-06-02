@@ -1,18 +1,15 @@
+
 {
   "name": "secure-signup-server",
   "version": "1.0.0",
-  "description": "Secure backend for beta tester sign-ups.",
+  "description": "Secure beta tester sign-up storage server",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "npm install && node server.js"
   },
   "dependencies": {
-    "body-parser": "^1.20.2",
-    "cors": "^2.8.5",
     "express": "^4.18.2",
-    "fs-extra": "^11.1.1"
-  },
-  "engines": {
-    "node": ">=16"
+    "fs": "0.0.1-security",
+    "cors": "^2.8.5"
   }
 }
