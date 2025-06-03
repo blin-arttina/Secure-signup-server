@@ -1,56 +1,64 @@
 
-const express = require('express');
-const fs = require('fs');
-const path = require('path');
-const bodyParser = require('body-parser');
-const cors = require('cors');
+const express = require("express");
+const bodyParser = require("body-parser");
+const fs = require("fs");
+const cors = require("cors");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 3000;
-const DATA_FILE = path.join(__dirname, 'beta_testers.json');
 
+// === Enable CORS ===
 app.use(cors());
+app.use((req, res, next) => {
+  res.header("Access-Control-Allow-Origin", "*"); // or restrict to GitHub domain
+  res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.header("Access-Control-Allow-Methods", "GET, POST");
+  next();
+});
+
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-app.post('/signup', (req, res) => {
-    const { name, email, wallet } = req.body;
-    if (!name || !email || !wallet) {
-        return res.status(400).json({ message: 'Missing required fields.' });
-    }
+// === Serve static files (optional) ===
+app.use(express.static("public"));
 
-    const newEntry = { name, email, wallet };
+// === Data file path ===
+const dataPath = path.join(__dirname, "beta_testers.json");
 
-    fs.readFile(DATA_FILE, 'utf8', (err, data) => {
-        let testers = [];
-        if (!err && data) {
-            try {
-                testers = JSON.parse(data);
-            } catch (parseErr) {
-                console.error('Failed to parse existing data:', parseErr);
-            }
-        }
+// === Endpoint: Submit form ===
+app.post("/submit", (req, res) => {
+  const { name, email, wallet } = req.body;
 
-        testers.push(newEntry);
+  if (!name || !email || !wallet) {
+    return res.status(400).json({ error: "Missing fields" });
+  }
 
-        fs.writeFile(DATA_FILE, JSON.stringify(testers, null, 2), err => {
-            if (err) {
-                console.error('Failed to save data:', err);
-                return res.status(500).json({ message: 'Failed to save data.' });
-            }
-            res.status(200).json({ message: 'Sign-up successful.' });
-        });
-    });
+  const newEntry = { name, email, wallet, timestamp: new Date().toISOString() };
+
+  let data = [];
+  if (fs.existsSync(dataPath)) {
+    data = JSON.parse(fs.readFileSync(dataPath));
+  }
+
+  data.push(newEntry);
+  fs.writeFileSync(dataPath, JSON.stringify(data, null, 2));
+
+  console.log("✅ New beta tester added:", newEntry);
+  res.status(200).json({ message: "Beta tester registered successfully" });
 });
 
-app.get('/signups', (req, res) => {
-    fs.readFile(DATA_FILE, 'utf8', (err, data) => {
-        if (err) {
-            return res.status(500).json({ message: 'Could not load signups.' });
-        }
-        res.status(200).json(JSON.parse(data));
-    });
+// === Endpoint: Get beta tester data ===
+app.get("/beta-testers", (req, res) => {
+  if (fs.existsSync(dataPath)) {
+    const data = fs.readFileSync(dataPath);
+    res.json(JSON.parse(data));
+  } else {
+    res.json([]);
+  }
 });
 
+// === Start server ===
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`🚀 Server is running on http://localhost:${PORT}`);
 });
