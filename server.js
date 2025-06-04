@@ -1,7 +1,8 @@
-
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
+const fs = require("fs");
+const path = require("path");
 
 const app = express();
 const PORT = process.env.PORT || 10000;
@@ -9,31 +10,36 @@ const PORT = process.env.PORT || 10000;
 app.use(cors());
 app.use(bodyParser.json());
 
-let betaTesters = [];
+const betaTestersPath = path.join(__dirname, "beta-testers.json");
 
-// ✅ Test route to check deployment
+// Route to test if server is working
 app.get("/api/test", (req, res) => {
-  res.send("✅ Server is live and responding.");
+  res.json({ message: "Server is working!" });
 });
 
-// ✅ Handle beta tester sign-up
-app.post("/api/beta-testers", (req, res) => {
+// Route to handle beta tester sign-up
+app.post("/api/signup", (req, res) => {
   const { name, email, wallet } = req.body;
 
   if (!name || !email || !wallet) {
-    return res.status(400).json({ error: "All fields are required." });
+    return res.status(400).json({ error: "Missing required fields" });
   }
 
-  betaTesters.push({ name, email, wallet });
-  console.log("New beta tester:", { name, email, wallet });
-  res.status(200).json({ message: "Sign-up successful!" });
+  const newTester = { name, email, wallet };
+
+  let testers = [];
+  if (fs.existsSync(betaTestersPath)) {
+    const existingData = fs.readFileSync(betaTestersPath);
+    testers = JSON.parse(existingData);
+  }
+
+  testers.push(newTester);
+  fs.writeFileSync(betaTestersPath, JSON.stringify(testers, null, 2));
+
+  res.status(200).json({ success: true, message: "Signup successful" });
 });
 
-// ✅ Retrieve beta testers
-app.get("/api/beta-testers", (req, res) => {
-  res.status(200).json(betaTesters);
-});
-
+// Start the server
 app.listen(PORT, () => {
-  console.log(`✅ Server running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
