@@ -1,57 +1,52 @@
 
 const express = require('express');
-const bodyParser = require('body-parser');
-const cors = require('cors');
 const fs = require('fs');
+const cors = require('cors');
 const path = require('path');
+const bodyParser = require('body-parser');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(cors());
 app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: true }));
 
-const BETA_TESTERS_FILE = path.join(__dirname, 'betaTesters.json');
+// Serve static files if needed
+app.use(express.static(path.join(__dirname, 'public')));
 
-// Ensure betaTesters.json exists
-if (!fs.existsSync(BETA_TESTERS_FILE)) {
-    fs.writeFileSync(BETA_TESTERS_FILE, JSON.stringify([]));
-}
-
-// Helper to read beta testers from file
-function readBetaTesters() {
-    try {
-        const data = fs.readFileSync(BETA_TESTERS_FILE);
-        return JSON.parse(data);
-    } catch (err) {
-        console.error('Error reading beta testers:', err);
-        return [];
-    }
-}
-
-// Helper to write beta testers to file
-function writeBetaTesters(data) {
-    fs.writeFileSync(BETA_TESTERS_FILE, JSON.stringify(data, null, 2));
-}
-
-// POST /api/signup
-app.post('/api/signup', (req, res) => {
+// POST endpoint for beta tester form
+app.post('/submit-form', (req, res) => {
     const { name, email, wallet } = req.body;
     if (!name || !email || !wallet) {
-        return res.status(400).json({ error: 'All fields are required.' });
+        return res.status(400).json({ message: 'Missing required fields' });
     }
 
-    const testers = readBetaTesters();
-    testers.push({ name, email, wallet });
-    writeBetaTesters(testers);
+    const newEntry = { name, email, wallet, timestamp: new Date().toISOString() };
+    const filePath = path.join(__dirname, 'beta_testers.json');
 
-    res.json({ success: true });
+    fs.readFile(filePath, 'utf8', (err, data) => {
+        let json = [];
+        if (!err && data) {
+            try {
+                json = JSON.parse(data);
+            } catch (e) {
+                json = [];
+            }
+        }
+        json.push(newEntry);
+        fs.writeFile(filePath, JSON.stringify(json, null, 2), 'utf8', err => {
+            if (err) {
+                return res.status(500).json({ message: 'Error saving data' });
+            }
+            res.status(200).json({ message: 'Thank you for signing up!' });
+        });
+    });
 });
 
-// GET /api/beta-testers
-app.get('/api/beta-testers', (req, res) => {
-    const testers = readBetaTesters();
-    res.json(testers);
+// Catch-all route for undefined endpoints
+app.use((req, res) => {
+    res.status(404).send('Route not found.');
 });
 
 app.listen(PORT, () => {
