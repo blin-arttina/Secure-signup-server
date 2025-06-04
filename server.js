@@ -1,54 +1,65 @@
-
 const express = require('express');
 const fs = require('fs');
 const cors = require('cors');
-const path = require('path');
 const bodyParser = require('body-parser');
+const path = require('path');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 
+// Middleware
 app.use(cors());
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({ extended: true }));
+app.use(express.static('public'));
 
-// Serve static files if needed
-app.use(express.static(path.join(__dirname, 'public')));
+// Signup route
+app.post('/api/signup', (req, res) => {
+  const { name, email, wallet } = req.body;
 
-// POST endpoint for beta tester form
-app.post('/submit-form', (req, res) => {
-    const { name, email, wallet } = req.body;
-    if (!name || !email || !wallet) {
-        return res.status(400).json({ message: 'Missing required fields' });
+  if (!name || !email || !wallet) {
+    return res.status(400).json({ error: 'Missing required fields' });
+  }
+
+  const newTester = { name, email, wallet };
+  const filePath = path.join(__dirname, 'beta-testers.json');
+
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    let testers = [];
+    if (!err && data) {
+      try {
+        testers = JSON.parse(data);
+      } catch (parseErr) {
+        console.error('JSON parse error:', parseErr);
+      }
     }
 
-    const newEntry = { name, email, wallet, timestamp: new Date().toISOString() };
-    const filePath = path.join(__dirname, 'beta_testers.json');
+    testers.push(newTester);
 
-    fs.readFile(filePath, 'utf8', (err, data) => {
-        let json = [];
-        if (!err && data) {
-            try {
-                json = JSON.parse(data);
-            } catch (e) {
-                json = [];
-            }
-        }
-        json.push(newEntry);
-        fs.writeFile(filePath, JSON.stringify(json, null, 2), 'utf8', err => {
-            if (err) {
-                return res.status(500).json({ message: 'Error saving data' });
-            }
-            res.status(200).json({ message: 'Thank you for signing up!' });
-        });
+    fs.writeFile(filePath, JSON.stringify(testers, null, 2), (err) => {
+      if (err) {
+        console.error('Write error:', err);
+        return res.status(500).json({ error: 'Server error writing file' });
+      }
+      res.status(200).json({ message: 'Signup successful' });
     });
+  });
 });
 
-// Catch-all route for undefined endpoints
-app.use((req, res) => {
-    res.status(404).send('Route not found.');
+// Endpoint to GET signups
+app.get('/api/beta-testers', (req, res) => {
+  const filePath = path.join(__dirname, 'beta-testers.json');
+  fs.readFile(filePath, 'utf8', (err, data) => {
+    if (err) return res.status(500).json({ error: 'Failed to read file' });
+    try {
+      const testers = JSON.parse(data);
+      res.status(200).json(testers);
+    } catch (parseErr) {
+      res.status(500).json({ error: 'Invalid JSON in file' });
+    }
+  });
 });
 
+// Start the server
 app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
+  console.log(`Server is running on port ${PORT}`);
 });
