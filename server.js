@@ -1,3 +1,4 @@
+
 const express = require("express");
 const cors = require("cors");
 const bodyParser = require("body-parser");
@@ -10,9 +11,9 @@ app.use(bodyParser.json());
 
 let betaTesters = [];
 
-// ✅ TEST ROUTE to verify server is working
+// ✅ Test route to check deployment
 app.get("/api/test", (req, res) => {
-  res.send("✅ Server is live and responding to /api/test");
+  res.send("✅ Server is live and responding.");
 });
 
 // ✅ Handle beta tester sign-up
@@ -28,12 +29,11 @@ app.post("/api/beta-testers", (req, res) => {
   res.status(200).json({ message: "Sign-up successful!" });
 });
 
-// ✅ Fetch beta testers
+// ✅ Retrieve beta testers
 app.get("/api/beta-testers", (req, res) => {
   res.status(200).json(betaTesters);
 });
 
-// ✅ Start server
 app.listen(PORT, () => {
   console.log(`✅ Server running on port ${PORT}`);
 });
