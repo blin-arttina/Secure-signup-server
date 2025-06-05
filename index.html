@@ -1,0 +1,83 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Assets Alert Beta Tester Sign-Up</title>
+  <style>
+    body {
+      background-color: #111;
+      color: #fff;
+      font-family: Arial, sans-serif;
+      padding: 20px;
+    }
+    h1, h2 {
+      color: #ff3c3c;
+    }
+    form {
+      margin-top: 20px;
+    }
+    input, button {
+      display: block;
+      margin-bottom: 10px;
+      padding: 10px;
+      width: 100%;
+      max-width: 400px;
+      border: none;
+      border-radius: 5px;
+    }
+    button {
+      background-color: #ff3c3c;
+      color: #fff;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #e03b3b;
+    }
+  </style>
+</head>
+<body>
+  <h1>Assets Alert</h1>
+  <p>Welcome to Assets Alert — real-time monitoring and alerts for Bitcoin, cryptocurrency, and stock prices. Join as a beta tester and get a free NFT!</p>
+
+  <h2>Beta Tester Sign-Up</h2>
+  <form id="signupForm">
+    <input type="text" id="name" placeholder="Name" required />
+    <input type="email" id="email" placeholder="Email" required />
+    <input type="text" id="wallet" placeholder="Wallet Address" required />
+    <button type="submit">Submit</button>
+  </form>
+
+  <p id="responseMessage"></p>
+
+  <script>
+    document.getElementById("signupForm").addEventListener("submit", async function (event) {
+      event.preventDefault();
+
+      const name = document.getElementById("name").value.trim();
+      const email = document.getElementById("email").value.trim();
+      const wallet = document.getElementById("wallet").value.trim();
+
+      try {
+        const response = await fetch("https://secure-signup-server.onrender.com/api/signup", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ name, email, wallet }),
+        });
+
+        const data = await response.json();
+        if (response.ok) {
+          document.getElementById("responseMessage").textContent = "Sign-up successful!";
+        } else {
+          document.getElementById("responseMessage").textContent = "Error: " + (data.message || "Submission failed.");
+        }
+      } catch (error) {
+        document.getElementById("responseMessage").textContent = "Error submitting form: " + error.message;
+      }
+    });
+  </script>
+</body>
+</html>
